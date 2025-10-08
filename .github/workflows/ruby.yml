@@ -19,20 +19,41 @@ permissions:
 jobs:
   test:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         ruby-version: ['2.6', '2.7', '3.0']
+        os: [ubuntu-latest, ubuntu-24.04]
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Ruby
-    # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
-    # change this to (see https://github.com/ruby/setup-ruby#versioning):
-    # uses: ruby/setup-ruby@v1
+    - name: Install dependencies for ruby-build
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev git
+    - name: Install ruby-build
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        git clone https://github.com/rbenv/ruby-build.git
+        sudo ./ruby-build/install.sh
+    - name: Install Ruby manually (ruby-build)
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        sudo mkdir -p /opt/hostedtoolcache/Ruby/${{ matrix.ruby-version }}/x64
+        sudo ruby-build ${{ matrix.ruby-version }} /opt/hostedtoolcache/Ruby/${{ matrix.ruby-version }}/x64
+        sudo touch /opt/hostedtoolcache/Ruby/${{ matrix.ruby-version }}/x64.complete
+        echo "/opt/hostedtoolcache/Ruby/${{ matrix.ruby-version }}/x64/bin" >> $GITHUB_PATH
+    - name: Set up Ruby (GitHub-hosted)
+      if: matrix.os != 'ubuntu-24.04'
       uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
       with:
         ruby-version: ${{ matrix.ruby-version }}
-        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+        bundler-cache: true
+    - name: Install Bundler (manual Ruby)
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        /opt/hostedtoolcache/Ruby/${{ matrix.ruby-version }}/x64/bin/gem install bundler
+        /opt/hostedtoolcache/Ruby/${{ matrix.ruby-version }}/x64/bin/bundle install
     - name: Run tests
       run: bundle exec ruby image_helper_test.rb
