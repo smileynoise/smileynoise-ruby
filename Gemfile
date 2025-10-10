@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 #ruby "2.6.3"
 #ruby "3.2.2"
-gem 'sinatra', '~> 2.2'
+gem 'sinatra', '~> 4.2'
 gem 'rmagick', '~> 5'
 # Bundle edge Rails instead:
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
